@@ -6,6 +6,7 @@ from datetime import time as datetime_time
 import time
 import unittest
 import random
+import sys
 
 import six
 
@@ -14,8 +15,13 @@ from faker.providers.date_time import Provider as DatetimeProvider
 from faker.providers.date_time.pl_PL import Provider as PlProvider
 from faker.providers.date_time.ar_AA import Provider as ArProvider
 from faker.providers.date_time.ar_EG import Provider as EgProvider
+from faker.providers.date_time.hy_AM import Provider as HyAmProvider
 
 import pytest
+
+
+def is64bit():
+    return sys.maxsize > 2**32
 
 
 class UTC(tzinfo):
@@ -91,7 +97,7 @@ class TestDateTime(unittest.TestCase):
         timestamp = DatetimeProvider._parse_date_time('+30d')
         now = DatetimeProvider._parse_date_time('now')
         assert timestamp > now
-        delta = timedelta(days=-30)
+        delta = timedelta(days=30)
         from_delta = DatetimeProvider._parse_date_time(delta)
         from_int = DatetimeProvider._parse_date_time(30)
 
@@ -114,7 +120,7 @@ class TestDateTime(unittest.TestCase):
         assert DatetimeProvider._parse_date(datetime.now()) == today
         assert DatetimeProvider._parse_date(parsed) == parsed
         assert DatetimeProvider._parse_date(30) == parsed
-        assert DatetimeProvider._parse_date(timedelta(days=-30)) == parsed
+        assert DatetimeProvider._parse_date(timedelta(days=30)) == parsed
 
     def test_timezone_conversion(self):
         from faker.providers.date_time import datetime_to_timestamp
@@ -168,6 +174,22 @@ class TestDateTime(unittest.TestCase):
     def test_time_object(self):
         assert isinstance(self.factory.time_object(), datetime_time)
 
+    def test_timedelta(self):
+        delta = self.factory.time_delta(end_datetime=timedelta(seconds=60))
+        assert delta.seconds <= 60
+
+        delta = self.factory.time_delta(end_datetime=timedelta(seconds=-60))
+        assert delta.seconds >= -60
+
+        delta = self.factory.time_delta(end_datetime='+60s')
+        assert delta.seconds <= 60
+
+        delta = self.factory.time_delta(end_datetime='-60s')
+        assert delta.seconds >= 60
+
+        delta = self.factory.time_delta(end_datetime='now')
+        assert delta.seconds <= 0
+
     def test_date_time_between_dates(self):
         timestamp_start = random.randint(0, 2000000000)
         timestamp_end = timestamp_start + 1
@@ -209,6 +231,7 @@ class TestDateTime(unittest.TestCase):
     def _datetime_to_time(self, value):
         return int(time.mktime(value.timetuple()))
 
+    @unittest.skipUnless(is64bit(), "requires 64bit")
     def test_date_time_this_period(self):
         # test century
         this_century_start = self._datetime_to_time(
@@ -276,6 +299,7 @@ class TestDateTime(unittest.TestCase):
             self._datetime_to_time(datetime.now())
         )
 
+    @unittest.skipUnless(is64bit(), "requires 64bit")
     def test_date_time_this_period_with_tzinfo(self):
         # ensure all methods provide timezone aware datetimes
         with pytest.raises(TypeError):
@@ -313,6 +337,7 @@ class TestDateTime(unittest.TestCase):
             replace(second=0, microsecond=0) == datetime.now(utc).replace(second=0, microsecond=0)
         )
 
+    @unittest.skipUnless(is64bit(), "requires 64bit")
     def test_date_this_period(self):
         # test century
         assert self.factory.date_this_century(after_today=False) <= date.today()
@@ -358,6 +383,16 @@ class TestDateTime(unittest.TestCase):
 
         assert isinstance(random_date, date)
         self.assertBetween(random_date, _30_years_ago, _20_years_ago)
+
+    def test_date_between_months(self):
+        today = date.today()
+        _2_months_ago = today - timedelta(days=2 * (365.24/12))
+        _9_months_ago = today - timedelta(days=9 * (365.24/12))
+
+        random_date = self.factory.date_between(start_date='-9M', end_date='-2M')
+
+        assert isinstance(random_date, date)
+        self.assertBetween(random_date, _9_months_ago, _2_months_ago)
 
     def test_parse_timedelta(self):
         from faker.providers.date_time import Provider
@@ -469,6 +504,23 @@ class TestPlPL(unittest.TestCase):
     def test_month(self):
         month = self.factory.month_name()
         assert month in PlProvider.MONTH_NAMES.values()
+
+
+class TestHyAm(unittest.TestCase):
+    """ Tests date_time in the hy_AM locale """
+
+    def setUp(self):
+        self.factory = Faker('hy_AM')
+
+    def test_day(self):
+        day = self.factory.day_of_week()
+        assert isinstance(day, six.string_types)
+        assert day in HyAmProvider.DAY_NAMES.values()
+
+    def test_month(self):
+        month = self.factory.month_name()
+        assert isinstance(month, six.string_types)
+        assert month in HyAmProvider.MONTH_NAMES.values()
 
 
 class TestAr(unittest.TestCase):

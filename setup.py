@@ -10,8 +10,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as fp:
     README = fp.read()
 
-with open(os.path.join(here, 'VERSION')) as version_file:
-    version = version_file.read().strip()
+with io.open(os.path.join(here, 'VERSION')) as version_file:
+    VERSION = version_file.read().strip()
 
 
 # this module can be zip-safe if the zipimporter implements iter_modules or if
@@ -26,7 +26,7 @@ except (ImportError, AttributeError):
 
 setup(
     name='Faker',
-    version=version,
+    version=VERSION,
     description="Faker is a Python package that generates fake data for you.",
     long_description=README,
     entry_points={
@@ -50,7 +50,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Testing',
         'Topic :: Utilities',
-        'License :: OSI Approved :: MIT License'
+        'License :: OSI Approved :: MIT License',
     ],
     keywords='faker fixtures data test mock generator',
     author='joke2k',
@@ -73,10 +73,13 @@ setup(
         "ukpostcodeparser>=1.1.1",
         "mock",
         "pytest>=3.8.0,<3.9",
+        "more-itertools<6.0.0",
+        "random2==1.0.1",
+        "freezegun==0.3.11",
     ],
     extras_require={
-        ':python_version=="2.7"': [
+        ':python_version<"3.3"': [
             'ipaddress',
         ],
-    }
+    },
 )
